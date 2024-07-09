@@ -1,0 +1,75 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   Int           @id @default(autoincrement())
+  name                 String        @unique
+  username             String        @unique
+  phoneNo              String?       @unique
+  profilePicture       String?
+  bio                  String?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  firstPlayer          Game[]        @relation("firstPlayer")
+  secondPlayer         Game[]        @relation("secondPlayer")
+  winner               Game[]        @relation("winner")
+  gameHistory          GameLog[]
+  receivedTransactions Transaction[] @relation("receiver")
+  sentTransactions     Transaction[] @relation("sender")
+  transactions         Transaction[] @relation("transactions")
+}
+
+model Game {
+  id             Int       @id @default(autoincrement())
+  buyIn          Float
+  maxPlayers     Int
+  firstPlayerId  Int
+  secondPlayerId Int?
+  winnerId       Int?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  firstPlayer    User      @relation("firstPlayer", fields: [firstPlayerId], references: [id])
+  secondPlayer   User?     @relation("secondPlayer", fields: [secondPlayerId], references: [id])
+  winner         User?     @relation("winner", fields: [winnerId], references: [id])
+  gameHistory    GameLog[]
+
+  @@index([firstPlayerId], map: "Game_firstPlayerId_fkey")
+  @@index([secondPlayerId], map: "Game_secondPlayerId_fkey")
+  @@index([winnerId], map: "Game_winnerId_fkey")
+}
+
+model GameLog {
+  id        Int      @id @default(autoincrement())
+  gameId    Int
+  playerId  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  game      Game     @relation(fields: [gameId], references: [id])
+  player    User     @relation(fields: [playerId], references: [id])
+
+  @@index([gameId], map: "GameLog_gameId_fkey")
+  @@index([playerId], map: "GameLog_playerId_fkey")
+}
+
+model Transaction {
+  id         Int      @id @default(autoincrement())
+  amount     Float
+  senderId   Int
+  receiverId Int
+  userId     Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  receiver   User     @relation("receiver", fields: [receiverId], references: [id])
+  sender     User     @relation("sender", fields: [senderId], references: [id])
+  user       User     @relation("transactions", fields: [userId], references: [id])
+
+  @@index([receiverId], map: "Transaction_receiverId_fkey")
+  @@index([senderId], map: "Transaction_senderId_fkey")
+  @@index([userId], map: "Transaction_userId_fkey")
+}
